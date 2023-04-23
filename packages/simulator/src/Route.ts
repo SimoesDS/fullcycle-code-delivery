@@ -7,14 +7,14 @@ const asyncReadFile = promisify(fs.readFile.bind(fs));
 
 
 
-interface Route {
+export interface Route {
   routeId: string;
   clientId:   string;
-  position: [number, number];
-  finished: boolean;
+  position?: [number, number][];
+  finished?: boolean;
 }
 
-async function loadPositions(routeId: string): Promise<[number, number]> {
+async function loadPositions(routeId: string): Promise<[number, number][]> {
   if(!routeId)
     throw new Error('Route number undefined!');
 
@@ -22,7 +22,7 @@ async function loadPositions(routeId: string): Promise<[number, number]> {
   const { coordinates } = JSON.parse(rawdata) as { coordinates: [number, number][] };
 
   
-  return coordinates[0];
+  return coordinates;
 }
 
 export async function getRouteById({ routeId, clientId }: { routeId: string, clientId: string }): Promise<Route> {
