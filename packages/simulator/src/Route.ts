@@ -5,35 +5,46 @@ import { promisify } from 'util';
 
 const asyncReadFile = promisify(fs.readFile.bind(fs));
 
-
-
 export interface Route {
   routeId: string;
-  clientId:   string;
+  clientId: string;
   position?: [number, number][];
   finished?: boolean;
+  error?: string,
 }
 
-async function loadPositions(routeId: string): Promise<[number, number][]> {
-  if(!routeId)
+async function loadRoute(routeId: string): Promise<Route> {
+  if (!routeId) {
     throw new Error('Route number undefined!');
+  }
 
-  const rawdata: any = await asyncReadFile(`./destinations/${routeId}.json`);
-  const { coordinates } = JSON.parse(rawdata) as { coordinates: [number, number][] };
+  try {
+    const rawdata = await asyncReadFile(`./destinations/${routeId}.json`);
+    const { coordinates } = JSON.parse(rawdata.toString()) as { coordinates: [number, number][] };
 
-  
-  return coordinates;
+    return {
+      routeId,
+      clientId: '',
+      position: coordinates,
+      finished: false,
+    };
+  } catch (error: any) {
+    return {
+      routeId,
+      clientId: '',
+      error: error.message,
+    };
+  }
 }
 
-export async function getRouteById({ routeId, clientId }: { routeId: string, clientId: string }): Promise<Route> {
-  const position = await loadPositions(routeId);
+export async function getRouteById({ routeId, clientId }: { routeId: string; clientId: string }): Promise<Route> {
+  const route = await loadRoute(routeId);
 
-  const route: Route = {
-    routeId,
-    clientId,
-    position,
-    finished: false
+  if (route.error) {
+    throw new Error(route.error);
   }
+
+  route.clientId = clientId;
 
   console.log(route);
 
