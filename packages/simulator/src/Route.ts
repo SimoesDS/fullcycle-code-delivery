@@ -5,9 +5,12 @@ import { promisify } from 'util';
 
 const asyncReadFile = promisify(fs.readFile.bind(fs));
 
-export interface Route {
+export interface RouteIndex {
   routeId: string;
   clientId: string;
+}
+
+export interface Route extends RouteIndex {
   position?: [number, number][];
   finished?: boolean;
   error?: string,
@@ -45,8 +48,6 @@ export async function getRouteById({ routeId, clientId }: { routeId: string; cli
   }
 
   route.clientId = clientId;
-
-  console.log(route);
 
   return route;
 }

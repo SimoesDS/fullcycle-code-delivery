@@ -1,25 +1,36 @@
 //docker exec -it be bash
-//kafka-console-producer --bootstrap-server=localhost:9092 --topic=readtest
 // kafka-topics --bootstrap-server=localhost:9092 --delete --topic route.new-position
+// kafka-topics --bootstrap-server=localhost:9092 --delete --topic route.new-direction
 // kafka-console-consumer --bootstrap-server=localhost:9092 --topic=route.new-position
+// kafka-console-producer --bootstrap-server=localhost:9092 --topic=route.new-direction
+// { "routeId": "2", "clientId": "1" }
 require('dotenv').config();
-import { Kafka, EachMessagePayload, Producer } from 'kafkajs'
-import { Route, getRouteById } from './Route'
+import { Kafka, EachMessagePayload } from 'kafkajs'
+import { Route, RouteIndex } from './Route'
+import { Worker } from 'node:worker_threads'
 
 type RouteOnly = Omit<Route, 'position'> & {
   position: [number, number]
 }
-type RouteArgs = RouteOnly | { error: string }
+type SendMessageHandlerArgs = Route | { error: string }
+type SendMessageHandler = (route: SendMessageHandlerArgs) => void
 
-async function handleMessage({ message }: EachMessagePayload, sendMessage: (route: RouteArgs) => void): Promise<void> {
+function createThread(routeIndex: RouteIndex, sendMessage: SendMessageHandler) {
+  const worker = new Worker('./dist/thread.js')
+  worker.on('message', sendMessage);
+  worker.on('error', sendMessage);
+  worker.postMessage(routeIndex);
+}
+
+async function handleMessage({ message }: EachMessagePayload, sendMessage: SendMessageHandler): Promise<void> {
   if (!message?.value) return;
 
   const { value } = message;
 
-  let parsedValue: unknown;
+  let routeIndex: RouteIndex;
   
   try {
-    parsedValue = JSON.parse(value.toString());
+    routeIndex = JSON.parse(value.toString());
   } catch (error) {
     sendMessage({
       error: `"${value.toString()}" precisa ser um JSON!`
@@ -27,31 +38,21 @@ async function handleMessage({ message }: EachMessagePayload, sendMessage: (rout
     return;
   }
 
-  const { routeId, clientId } = parsedValue as { routeId?: string; clientId?: string };
-
-  if (!routeId) {
+  if (!routeIndex.routeId) {
     sendMessage({
-      error: '"routeId" não informado!'
+      error: '"routeId" undefined!'
     });
     return;
   }
 
-  if (!clientId) {
+  if (!routeIndex.clientId) {
     sendMessage({
-      error: '"clientId" não informado!'
+      error: '"clientId" undefined!'
     });
     return;
   }
 
-  const route = await getRouteById({ routeId, clientId });
-
-  const timer = setTimeout(() => {
-    route.position?.forEach((position) => {
-      sendMessage({ ...route, position })
-    });
-
-    clearInterval(timer);
-  }, 500);
+  createThread(routeIndex, sendMessage);
 }
 
 async function run() {
@@ -74,13 +75,15 @@ async function run() {
 
   const consumer = kafka.consumer({ groupId: KAFKA_CONSUMER_GROUP_ID })
 
-  await consumer.connect()
+  await consumer.connect();
+  console.log(`Subscribeing on topic ${KAFKA_READ_TOPIC}...`);
   await consumer.subscribe({ topic: KAFKA_READ_TOPIC, fromBeginning: false })
 
+  console.log(`Starting Simulator...`);
   await consumer.run({
     eachMessage: async (msgSrc) => {
       try {
-        await handleMessage(msgSrc, (msgOut: RouteOnly | { error: string }) => {
+        await handleMessage(msgSrc, (msgOut: SendMessageHandlerArgs) => {
           producer.send({
             topic: KAFKA_PRODUCE_TOPIC,
             messages: [
@@ -94,7 +97,9 @@ async function run() {
         console.error(`Error processing message: ${error.message}`);
       }
     }
-  })
+  });
+
+  console.log(`Simulador is running!`);
 }
 
 run().catch(console.error)
