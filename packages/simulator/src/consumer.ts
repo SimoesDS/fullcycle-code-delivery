@@ -3,23 +3,31 @@
 // kafka-topics --bootstrap-server=localhost:9092 --delete --topic route.new-direction
 // kafka-console-consumer --bootstrap-server=localhost:9092 --topic=route.new-position
 // kafka-console-producer --bootstrap-server=localhost:9092 --topic=route.new-direction
+// { "routeId": "1", "clientId": "1" }
 // { "routeId": "2", "clientId": "1" }
+// { "routeId": "3", "clientId": "1" }
 require('dotenv').config();
 import { Kafka, EachMessagePayload } from 'kafkajs'
-import { Route, RouteIndex } from './Route'
 import { Worker } from 'node:worker_threads'
 
-type RouteOnly = Omit<Route, 'position'> & {
-  position: [number, number]
-}
 type SendMessageHandlerArgs = Route | { error: string }
 type SendMessageHandler = (route: SendMessageHandlerArgs) => void
 
+export interface RouteIndex {
+  routeId: string;
+  clientId: string;
+}
+
+export interface Route extends RouteIndex {
+  position?: [number, number][];
+  finished?: boolean;
+  error?: string,
+}
+
 function createThread(routeIndex: RouteIndex, sendMessage: SendMessageHandler) {
-  const worker = new Worker('./dist/thread.js')
+  const worker = new Worker('./dist/thread.js', { workerData: routeIndex })
   worker.on('message', sendMessage);
   worker.on('error', sendMessage);
-  worker.postMessage(routeIndex);
 }
 
 async function handleMessage({ message }: EachMessagePayload, sendMessage: SendMessageHandler): Promise<void> {
@@ -102,4 +110,4 @@ async function run() {
   console.log(`Simulador is running!`);
 }
 
-run().catch(console.error)
+run().catch(console.error);
