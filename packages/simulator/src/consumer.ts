@@ -75,7 +75,8 @@ async function run() {
 
   const kafka = new Kafka({
     clientId: KAFKA_CONSUMER_GROUP_ID,
-    brokers: ['localhost:9092']
+    brokers: ['host.docker.internal:9092'],
+    
   });
 
   const producer = kafka.producer();

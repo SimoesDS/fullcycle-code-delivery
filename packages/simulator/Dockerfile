@@ -1,9 +1,9 @@
-FROM node:18.16.0
+FROM node:18-alpine
+
+# RUN apk add --no-cache bash
+
+USER node
 
 WORKDIR /src
 
-RUN apt-get update && \
-    apt-get install build-essential librdkafka-dev -y && \
-    npm ci
-
-CMD ["tail", "-f", "/dev/null"]
+RUN npm run dev
