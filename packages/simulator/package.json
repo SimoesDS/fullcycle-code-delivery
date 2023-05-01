@@ -1,5 +1,5 @@
 {
-  "name": "simulator",
+  "name": "@fullcycle-code-delivery/simulator-app",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
