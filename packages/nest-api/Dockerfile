@@ -4,6 +4,8 @@ FROM node:18-alpine
 
 USER node
 
+RUN npm install -g @nestjs/cli
+
 WORKDIR /home/node/app
 
-RUN npm run dev
+RUN npm run start:dev
