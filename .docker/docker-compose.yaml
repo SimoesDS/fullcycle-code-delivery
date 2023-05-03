@@ -58,12 +58,14 @@ services:
   #     PORT: 9021
   
   nest-api:
-    build: .
+    build:
+      context: ../packages/nest-api
     container_name: nest-api
     ports:
       - 3000:3000
     volumes:
-      - ./packages/nest-api:/src
-      - ../../node_modules:/src/node_modules
+      - ../packages/nest-api:/home/node/app
+      - ../node_modules:/home/node/app/node_modules
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
+    command: "npm run start:dev"
