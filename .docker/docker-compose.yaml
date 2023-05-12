@@ -44,7 +44,7 @@ services:
   #       "sleep 5s &&
   #       kafka-topics --create --topic=route.new-direction --if-not-exists --bootstrap-server=localhost:9092 &&
   #       kafka-topics --create --topic=route.new-position --if-not-exists --bootstrap-server=localhost:9092"
-  
+
   # control-center:
   #   image: confluentinc/cp-enterprise-control-center:latest
   #   hostname: control-center
@@ -56,7 +56,7 @@ services:
   #     CONTROL_CENTER_BOOTSTRAP_SERVERS: 'localhost:9092'
   #     CONTROL_CENTER_REPLICATION_FACTOR: 1
   #     PORT: 9021
-  
+
   # nest-api:
   #   build:
   #     context: ../packages/nest-api
@@ -76,23 +76,25 @@ services:
     image: mongo:latest
     restart: always
     volumes:
-     - ./dbdata:/data/db
-     - ./mongo:/docker-entrypoint-initdb.d
+      - ./dbdata:/data/db
+      - ./mongo:/docker-entrypoint-initdb.d
     environment:
-     - MONGO_INITDB_ROOT_USERNAME=root
-     - MONGO_INITDB_ROOT_PASSWORD=root
-     - MONGO_INITDB_DATABASE=nest
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+      - MONGO_INITDB_DATABASE=nest
+    ports:
+      - "27017:27017"
 
   mongo-express:
     image: mongo-express
     restart: always
     ports:
-     - 8081:8081
+      - 8081:8081
     environment:
-     - ME_CONFIG_MONGODB_SERVER=db
-     - ME_CONFIG_MONGODB_AUTH_USERNAME=root
-     - ME_CONFIG_MONGODB_AUTH_PASSWORD=root
-     - ME_CONFIG_MONGODB_ADMINUSERNAME=root
-     - ME_CONFIG_MONGODB_ADMINPASSWORD=root
+      - ME_CONFIG_MONGODB_SERVER=db
+      - ME_CONFIG_MONGODB_AUTH_USERNAME=root
+      - ME_CONFIG_MONGODB_AUTH_PASSWORD=root
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=root
     depends_on:
-     - db
+      - db
