@@ -6,4 +6,4 @@ USER node
 
 WORKDIR /home/node/app
 
-RUN npm run dev
+# RUN npm run dev
